@@ -26,15 +26,15 @@
             z-index: 1;
         }
         @keyframes strikeLoop {
-            0%, 15% { width: 0; } /* No strike */
-            20% { width: 100%; } /* Strike */
-            35% { width: 100%; } /* Keep strike */
-            40% { width: 0; } /* Remove strike */
-            55% { width: 0; } /* No strike */
-            60% { width: 100%; } /* Strike */
-            75% { width: 100%; } /* Keep strike */
-            80% { width: 0; } /* Remove strike */
-            95%, 100% { width: 0; } /* No strike */
+            0%, 15% { width: 0; }
+            20% { width: 100%; }
+            35% { width: 100%; }
+            40% { width: 0; }
+            55% { width: 0; }
+            60% { width: 100%; }
+            75% { width: 100%; }
+            80% { width: 0; }
+            95%, 100% { width: 0; }
         }
         @keyframes publicLoop {
             0%, 15% { opacity: 0; transform: translateY(10px); }
@@ -73,6 +73,57 @@
             margin-top: 2rem;
             position: relative;
         }
+        .game-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 850px;
+            height: 90%;
+            max-height: 500px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .game-popup iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1001;
+        }
+        .popup-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-center items-center">
@@ -85,8 +136,17 @@
             <p class="font-bold text-indigo-600 public-text">Public.</p>
         </div>
         <p class="coming-soon text-xl md:text-2xl text-gray-600 italic">Coming soon...</p>
+        <button id="gameButton" class="mt-8 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            Can't wait?
+        </button>
     </div>
     
+    <div class="overlay" id="overlay"></div>
+    <div class="game-popup" id="gamePopup">
+        <button class="popup-close" id="closePopup">&times;</button>
+        <iframe src="game.html" allow="fullscreen" allowfullscreen frameborder="0"></iframe>
+    </div>
+
     <footer class="fixed bottom-0 w-full p-4 text-center">
         <a href="https://twitter.com/YaswantA" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800 transition-colors duration-300 font-medium">
             Yaswant Adiraju
@@ -94,26 +154,50 @@
     </footer>
 
     <script>
+        // Game popup handling
+        const gameButton = document.getElementById('gameButton');
+        const gamePopup = document.getElementById('gamePopup');
+        const overlay = document.getElementById('overlay');
+        const closePopup = document.getElementById('closePopup');
+        const gameFrame = document.querySelector('.game-popup iframe');
+
+        function showGame() {
+            gamePopup.style.display = 'block';
+            overlay.style.display = 'block';
+            // Force iframe reload and focus
+            gameFrame.src = 'game.html';
+            gameFrame.focus();
+        }
+
+        function hideGame() {
+            gamePopup.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+
+        gameButton.addEventListener('click', showGame);
+        closePopup.addEventListener('click', hideGame);
+        overlay.addEventListener('click', hideGame);
+
+        // Prevent spacebar from scrolling when game is open
+        window.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && gamePopup.style.display === 'block') {
+                e.preventDefault();
+            }
+        });
+
+        // Initialize particles.js
         particlesJS('particles-js', {
             particles: {
                 number: { value: 80, density: { enable: true, value_area: 800 } },
                 color: { value: '#4F46E5' },
                 shape: { type: 'circle' },
-                opacity: {
-                    value: 0.5,
-                    random: false,
-                    anim: { enable: false }
-                },
-                size: {
-                    value: 3,
-                    random: true,
-                    anim: { enable: false }
-                },
+                opacity: { value: 0.5, random: false },
+                size: { value: 3, random: true },
                 line_linked: {
                     enable: true,
                     distance: 150,
                     color: '#4F46E5',
-                    opacity: 0.2,
+                    opacity: 0.4,
                     width: 1
                 },
                 move: {
@@ -123,23 +207,51 @@
                     random: false,
                     straight: false,
                     out_mode: 'out',
-                    bounce: false,
-                    attract: { enable: true, rotateX: 600, rotateY: 1200 }
+                    bounce: false
                 }
             },
             interactivity: {
                 detect_on: 'canvas',
                 events: {
-                    onhover: { enable: true, mode: 'grab' },
+                    onhover: { enable: true, mode: 'repulse' },
                     onclick: { enable: true, mode: 'push' },
                     resize: true
-                },
-                modes: {
-                    grab: { distance: 140, line_linked: { opacity: 1 } },
-                    push: { particles_nb: 4 }
                 }
             },
             retina_detect: true
+        });
+
+        // Cookie handling
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "; expires=" + date.toUTCString();
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        // Set visitor cookie and increment visit count
+        window.addEventListener('load', () => {
+            let visitorId = getCookie('visitor_id');
+            if (!visitorId) {
+                visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                setCookie('visitor_id', visitorId, 365);
+            }
+            
+            let visitCount = parseInt(getCookie('visit_count') || '0');
+            setCookie('visit_count', visitCount + 1, 365);
+            
+            setCookie('last_visit', new Date().toISOString(), 365);
         });
     </script>
 </body>
